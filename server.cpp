@@ -62,82 +62,35 @@ public:
     void run();
 };
 
-void TcpServer::ClientHandler(int client_socket_fd)
-{
-    std::string my_nickname;
-    {
-        char temp_buffer[1024];
-        ssize_t nickname_len;
-        while (true)
-        {
-            memset(temp_buffer, 0, sizeof(temp_buffer));                               // temp_buffer초기화
-            write(client_socket_fd, "write your name: ", sizeof("write your name: ")); // 닉네임 입력을 요청해줌
-            nickname_len = read(client_socket_fd, temp_buffer, sizeof(temp_buffer));   // nickname 받아오기
-            bool duplication_nickname = false;
-            if (nickname_len <= 0)
-            { // 연결 끊김 처리
-                close(client_socket_fd);
-                return;
-            }
-            if (nickname_len > 0 && temp_buffer[nickname_len - 1] == '\n')
-                temp_buffer[nickname_len - 1] = '\0'; // 개행문자를 null로 대체
-            if (nickname_len > 1 && temp_buffer[nickname_len - 2] == '\r')
-                temp_buffer[nickname_len - 2] = '\0';
-            if (strlen(temp_buffer) == 0)
-                continue;
-            client_mutex.lock(); // lock 걸기
-            for (auto i = client_sockets.begin(); i != client_sockets.end(); i++)
-            { // duplication_nickname으로 닉네임의 중복을 체크함
-                if (std::string(i->second) == std::string(temp_buffer))
-                    duplication_nickname = true;
-            }
-            client_mutex.unlock(); // lock 해제
-            if (duplication_nickname == false)
-            {
-                my_nickname = std::string(temp_buffer);
-                break;
-            }
+void TcpServer::ClientHandler(int client_socket_fd){
+    char temp_buffer[3000];//browser의 요청을 담는 buffer
+    //1. browser에서 온 것을 read
+    memset(temp_buffer, 0, sizeof(temp_buffer));
+    read(client_socket_fd, temp_buffer, sizeof(temp_buffer));
 
-            else
-                write(client_socket_fd, "This nickname already exists. Please enter again\n", sizeof("This nickname already exists. Please enter again"));
-        }
-        client_mutex.lock(); // lock 걸어버림
-        client_sockets[client_socket_fd] = std::string(temp_buffer);
-        client_mutex.unlock(); // lock 해제
-        BroadCast(client_socket_fd, client_sockets[client_socket_fd] + " has entered!\r\n");
-    }
+    //browser에서 보낸 요청
+    std::cout<<"browser's request"<<std::endl;
+    std::cout<<temp_buffer<<std::endl;
+    std::cout<<"==================="<<std::endl;
+    //web의 내용
+    std::string html_body = 
+        "<html>"
+        "<body>"
+        "<h1 style='color:blue'>Hello! This is My Server!</h1>"
+        "<p>Success!</p>"
+        "</body>"
+        "</html>";
+    //browser가 받는 것
+    std::string http_response = 
+        "HTTP/1.1 200 OK\r\n"                         // 1. 인사 (성공했다!)
+        "Content-Type: text/html; charset=UTF-8\r\n" // 2. 이거 HTML이야
+        "Content-Length: " + std::to_string(html_body.size()) + "\r\n" // 3. 길이는 이만큼이야
+        "\r\n" +                                     // 4. (중요) 헤더 끝났다는 빈 줄 표시
+        html_body;                                  //5. web의 내용
 
-    while (true) // 채팅 loop
-    {
-        // 5-1. read() 구현
-        char temp_buffer[1024];
-        ssize_t server_read = read(client_socket_fd, temp_buffer, sizeof(temp_buffer));
-        // ssize_t read(int client_socket_fd, 받아올 버퍼의 포인터, size_t 받아올 크기);
-        if (server_read <= 0)                               // 0==종료, -1==error
-        {                                                   // client 연결종료(EOF)
-            std::lock_guard<std::mutex> lock(client_mutex); // lock걸기
-            client_sockets.erase(client_socket_fd);         // client 삭제
-            if (server_read == -1)
-            {
-                // reading 실패
-                std::cerr << "reading 실패, 에러 코드: " << errno << std::endl;
-                break; // read에서의 에러->보통 연결에 문제가 생긴 경우->break를 통해 close()호출
-            }
-            break; // while loop를 탈출해서 client 종료
-        }
-        if (server_read < 1024)
-            temp_buffer[server_read] = '\0';
-        if (server_read > 0 && temp_buffer[server_read - 1] == '\n')//개행문자삭제
-        {
-            temp_buffer[server_read - 1] = '\0'; 
-        }
-        // 5-2.write() 구현
-        std::string guest_msg = my_nickname + ": " + temp_buffer + "\r";
-        BroadCast(client_socket_fd, guest_msg);
-        // ssize_t write(int client_socket_fd, const void *(보낼 문자열), size_t (보낼 문자열의 길이));
-    }
-    close(client_socket_fd); // client_socket_fd를 close
-    return;
+    //내용 전송
+    write(client_socket_fd, http_response.c_str(), http_response.size());
+    close(client_socket_fd);
 }
 
 void TcpServer::BroadCast(int current_socket, std::string client_msg)
