@@ -85,10 +85,10 @@ void TcpServer::ClientHandler(int client_socket_fd){
 
             //2. image용 header만들기(Content-Type이 image/jpeg)
             std::string httep_header=
-                "HTTP/1.1 200 OK\r\n"
-                "Content-Type: image/jpeg\r\n" // image라고 알려줌
-                "Content-Length: "+std::to_string(file_size)+"\r\n" // file size를 알려줌
-                "\r\n";// header body구분 빈줄
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Type: image/jpeg\r\n" 
+            "Content-Length: "+std::to_string(file_size)+"\r\n"
+            "\r\n";
             
             //3. header, body순으로 전송
             write(client_socket_fd, httep_header.c_str(), httep_header.size());
@@ -97,16 +97,52 @@ void TcpServer::ClientHandler(int client_socket_fd){
     }
     else{//html
         //1. HTML작성 설명과 이미지 태그 포함
-        std::string html_body = 
-        "<html>"
-        "<head><meta charset='UTF-8'></head>"//한글 깨짐 방지
-        "<body>"
-        "<h1 style='color:black'>경상고등학교에 오신 것을 환영합니다!</h1>"//제목
-        "<img src='/leesimyeong.jpg' style='width:300px; border-radius:10px;'/>"
-        "<p>이름은 심영이고, 츄르를 좋아해요</p>"
-        "<p><strong>server를 통해 띄운 심영이입니다<strong><p>"
-        "</body>"
-        "</html>";
+        std::string html_body = R"(
+        <html>
+        <head>
+            <meta charset='UTF-8'>
+            <title>(환) 경상고등학교 (영)</title>
+            <style>
+            /* CSS design*/
+                body{
+                    background-color: #f4f4f4;
+                    display: flex;
+                    jstify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    margin: 0;
+                    font-family: 'Malgun Gothic', sans-serif;
+                }
+                .container{
+                    background: white;
+                    padding: 40px;
+                    border-radius: 20px;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+                    text-align: center;
+                }
+                h1{color: #2c3e50; margin-bottom: 20px;}
+                img{
+                    width: 250px;
+                    height: 250px;
+                    border-radious: 50%; /*원형 이미지*/
+                    object-fit: cover;
+                    border: 5px solid #FFD700;
+                    margin-bottom: 20px;
+                }
+                p{font-size: 1.1em; color #555;}
+                .highlight{color: #e74c3c; font-weight: bold;}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1> 경상고등학교에 오신 것을 환영합니다! </h1>
+                <img src='/leesimyeong.jpg' alt='심영이 사진'/>
+                <p>이름은 <span class="highlight">심영</span>이고, 츄르를 좋아해요</p>
+                <p><strong>C++를 통해 띄운 심영이입니다</p>
+            </div>
+        </body>
+        </html>
+        )";
 
         //2. HTML용 헤더 만들기
         std::string http_response = 
