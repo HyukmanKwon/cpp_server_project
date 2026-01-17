@@ -9,6 +9,7 @@
 #include <mutex>        //vector 관리를 위한 mutex
 #include <algorithm>
 #include <map> //std::map 이용
+#include <fstream> //file 입출력
 
 class TcpServer
 {
@@ -68,28 +69,58 @@ void TcpServer::ClientHandler(int client_socket_fd){
     memset(temp_buffer, 0, sizeof(temp_buffer));
     read(client_socket_fd, temp_buffer, sizeof(temp_buffer));
 
-    //browser에서 보낸 요청
-    std::cout<<"browser's request"<<std::endl;
-    std::cout<<temp_buffer<<std::endl;
-    std::cout<<"==================="<<std::endl;
-    //web의 내용
-    std::string html_body = 
+    //browser에서 보낸 요청을 선택(image를 원하는지, 아니면 HTML을 원하는지)
+    if(strstr(temp_buffer, "GET /leesimyeong.jpg")!=nullptr){//GET /leesimyeong.jpg요청이 있을때
+        //1. browser가 leesimyeong.jpg를 요청했을 때 -> image파일 열기
+        std::ifstream file("leesimyeong.jpg", std::ios::ate | std::ios::binary);//|를 통해 명령어를 조합해줌
+        //binary: data로 읽음 ate: 
+        if(file.is_open()){
+            //file 크기 재기
+            std::streamsize file_size=file.tellg();
+            file.seekg(0, std::ios::beg);//seekg(offset, 기준)->std::ios::beg(파일의 맨앞)에서 0만큼 이동
+
+            //file내용 읽어서 담기
+            std::vector<char> file_buffer(file_size);
+            file.read(file_buffer.data(), file_size);
+
+            //2. image용 header만들기(Content-Type이 image/jpeg)
+            std::string httep_header=
+                "HTTP/1.1 200 OK\r\n"
+                "Content-Type: image/jpeg\r\n" // image라고 알려줌
+                "Content-Length: "+std::to_string(file_size)+"\r\n" // file size를 알려줌
+                "\r\n";// header body구분 빈줄
+            
+            //3. header, body순으로 전송
+            write(client_socket_fd, httep_header.c_str(), httep_header.size());
+            write(client_socket_fd, file_buffer.data(), file_size);
+        }
+    }
+    else{//html
+        //1. HTML작성 설명과 이미지 태그 포함
+        std::string html_body = 
         "<html>"
+        "<head><meta charset='UTF-8'></head>"//한글 깨짐 방지
         "<body>"
-        "<h1 style='color:blue'>Hello! This is My Server!</h1>"
-        "<p>Success!</p>"
+        "<h1 style='color:black'>경상고등학교에 오신 것을 환영합니다!</h1>"//제목
+        "<img src='/leesimyeong.jpg' style='width:300px; border-radius:10px;'/>"
+        "<p>이름은 심영이고, 츄르를 좋아해요</p>"
+        "<p><strong>server를 통해 띄운 심영이입니다<strong><p>"
         "</body>"
         "</html>";
-    //browser가 받는 것
-    std::string http_response = 
-        "HTTP/1.1 200 OK\r\n"                         // 1. 인사 (성공했다!)
-        "Content-Type: text/html; charset=UTF-8\r\n" // 2. 이거 HTML이야
-        "Content-Length: " + std::to_string(html_body.size()) + "\r\n" // 3. 길이는 이만큼이야
-        "\r\n" +                                     // 4. (중요) 헤더 끝났다는 빈 줄 표시
-        html_body;                                  //5. web의 내용
 
-    //내용 전송
-    write(client_socket_fd, http_response.c_str(), http_response.size());
+        //2. HTML용 헤더 만들기
+        std::string http_response = 
+        "HTTP/1.1 200 OK\r\n"                         // HTTP/1.1로 성공
+        "Content-Type: text/html; charset=UTF-8\r\n" // HTML임을 알림
+        "Content-Length: " + std::to_string(html_body.size()) + "\r\n" // content의 길이를 알려줌
+        "\r\n" +                                     // header와 body를 구분하는 빈줄
+        html_body;                                  //html_body를 연결
+
+        //3. 내용을 전송
+        write(client_socket_fd, http_response.c_str(), http_response.size());
+    }
+    
+
     close(client_socket_fd);
 }
 
