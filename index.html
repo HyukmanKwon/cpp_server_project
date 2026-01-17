@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>경상고등학교</title>
+    <style>
+        /* h1 태그 스타일 수정 */
+        h1 {
+            display: flex;
+            /* 1. 플렉스 모드 켜기 */
+            justify-content: center;
+            /* 2. 가로로 가운데 정렬 */
+            align-items: center;
+            /* 3. 세로로 가운데 정렬 (이게 핵심!) */
+            gap: 15px;
+            /* 4. 이미지와 글자 사이 간격 벌리기 */
+            color: #2c3e50;
+            /* 글자 색상 (선택사항) */
+            margin-bottom: 20px;
+        }
+
+        body {
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Malgun Gothic';
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            width: 400px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        img {
+            width: 200px;
+            height: 200px;
+            border-radius: 10%;
+            border: 5px solid #2ecc71;;
+            margin-bottom: 10px;
+            object-fit: cover;
+        }
+
+        .kyungsang {
+            display: flex;
+            width: 40px;
+            height: 40px;
+            border: none;
+            align-items: center;
+        }
+
+        .title{
+            display: inline-block;
+            background-color: white;
+            color: black;
+            padding: 10px 50px;
+            text-decoration: none;
+            border-radius: 30px;
+            border: 5px solid #2ecc71;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: #2ecc71;
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 30px;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background-color: #27ae60;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>
+            <div class="title">
+            <img src="/kyungsang.jpg" class="kyungsang">경상고등학교</div>
+        </h1>
+        <img src="/leesimyeong.jpg">
+        <p>안녕하세요! <strong>심영</strong>입니다.</p>
+        <a href="/info" class="btn">📢 학교 소개 보러가기</a>
+    </div>
+</body>
+
+</html>
