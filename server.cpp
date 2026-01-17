@@ -95,6 +95,31 @@ void TcpServer::ClientHandler(int client_socket_fd){
             write(client_socket_fd, file_buffer.data(), file_size);
         }
     }
+    else if(strstr(temp_buffer, "GET /kyungsang.jpg")!=nullptr){
+        //1. browser가 kyungsang.jpg를 요청했을 때 -> image파일 열기
+        std::ifstream file("kyungsang.jpg", std::ios::ate | std::ios::binary);//|를 통해 명령어를 조합해줌
+        //binary: data로 읽음 ate: 
+        if(file.is_open()){
+            //file 크기 재기
+            std::streamsize file_size=file.tellg();
+            file.seekg(0, std::ios::beg);//seekg(offset, 기준)->std::ios::beg(파일의 맨앞)에서 0만큼 이동
+
+            //file내용 읽어서 담기
+            std::vector<char> file_buffer(file_size);
+            file.read(file_buffer.data(), file_size);
+
+            //2. image용 header만들기(Content-Type이 image/jpeg)
+            std::string httep_header=
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Type: image/jpeg\r\n" 
+            "Content-Length: "+std::to_string(file_size)+"\r\n"
+            "\r\n";
+            
+            //3. header, body순으로 전송
+            write(client_socket_fd, httep_header.c_str(), httep_header.size());
+            write(client_socket_fd, file_buffer.data(), file_size);
+        }
+    }
     else{//html
         //1. HTML작성 설명과 이미지 태그 포함
         std::string html_body = R"(
@@ -105,38 +130,47 @@ void TcpServer::ClientHandler(int client_socket_fd){
             <style>
             /* CSS design*/
                 body{
-                    background-color: #f4f4f4;
-                    display: flex;
-                    jstify-content: center;
-                    align-items: center;
-                    height: 100vh;
-                    margin: 0;
-                    font-family: 'Malgun Gothic', sans-serif;
+                    background-color: #f4f4f4;/*배경색을 지정, f4f4f4는 연회색*/
+                    display: flex;/*화면 배치 모드를 flex모드로 켭니다. -> 내용물을 자유자재로 정렬함*/
+                    justify-content: center;/*가로축인 x축을 기준으로 가운데에 정렬*/
+                    align-items: center;/*세로축인 y축을 기준으로 가운데에 정렬*/
+                    height: 100vh;/*화면의 높이 설정 -> 100vh는 보이는 화면의 100%임*/
+                    margin: 0;/*상하좌우 여백 0으로 함*/
+                    font-family: 'Malgun Gothic', sans-serif;/*맑은 고딕을 쓰고, 없을 경우 시스템 기본 고딕을 씀*/
                 }
-                .container{
+                .container{/*HTML에서 <div class="container">로 이름을 붙여놨음*/
                     background: white;
-                    padding: 40px;
-                    border-radius: 20px;
-                    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-                    text-align: center;
+                    padding: 40px;/*안쪽 여백*/
+                    border-radius: 20px;/*테두리(border)의 모서리를 20px만큼 둥글게 깎습니다*/
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.1);/*그림자 효과 순서대로 x축이동, y축이동, 흐림정도, 색상*/
+                    text-align: center;/*그림자와 이미지를 가운데 정렬함*/
                 }
                 h1{color: #2c3e50; margin-bottom: 20px;}
-                img{
-                    width: 250px;
-                    height: 250px;
-                    border-radious: 50%; /*원형 이미지*/
-                    object-fit: cover;
-                    border: 5px solid #FFD700;
-                    margin-bottom: 20px;
+                .img_simyeong{
+                    width: 250px;/*가로 250픽셀*/
+                    height: 250px;/*세로 250픽셀*/
+                    border-radius: 50%; /*모서리를 50% 깎음*/
+                    object-fit: cover;/*넘치는 부분 자동으로 잘라줌*/
+                    border: 5px solid #050505;/*5px 두께의 실선을 그림*/
+                    margin-bottom: 20px;/*사진 밑에 20px만큼 공간을 띄움*/
                 }
-                p{font-size: 1.1em; color #555;}
+                .img_kyungsang{
+                    width: 50px;/*가로 10픽셀*/
+                    height: 50px;/*세로 10픽셀*/
+                    object-fit: cover;/*넘치는 부분 자동으로 잘라줌*/
+                }
+                p{font-size: 1.1em; color: #555;}
                 .highlight{color: #e74c3c; font-weight: bold;}
             </style>
         </head>
         <body>
             <div class="container">
-                <h1> 경상고등학교에 오신 것을 환영합니다! </h1>
-                <img src='/leesimyeong.jpg' alt='심영이 사진'/>
+                <h1> 
+                <img src='/kyungsang.jpg' class="img_kyungsang"> 
+                경상고등학교에 오신 것을 환영합니다! 
+                <img src='/kyungsang.jpg' class="img_kyungsang">
+                </h1>
+                <img src='/leesimyeong.jpg' class="img_simyeong" alt='심영이 사진'/>
                 <p>이름은 <span class="highlight">심영</span>이고, 츄르를 좋아해요</p>
                 <p><strong>C++를 통해 띄운 심영이입니다</p>
             </div>
